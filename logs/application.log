@@ -1,0 +1,29 @@
+16:21:57.130 [main] INFO  searchengine.Application - Starting Application using Java 19.0.1 with PID 3924 (C:\Users\настя\Desktop\11\target\classes started by настя in C:\Users\настя\Desktop\11)
+16:21:57.134 [main] INFO  searchengine.Application - No active profile set, falling back to 1 default profile: "default"
+16:24:02.662 [main] INFO  searchengine.Application - Started Application in 131.59 seconds (process running for 176.595)
+16:40:13.698 [main] INFO  searchengine.Application - Starting Application using Java 19.0.1 with PID 1100 (C:\Users\настя\Desktop\11\target\classes started by настя in C:\Users\настя\Desktop\11)
+16:40:13.702 [main] INFO  searchengine.Application - No active profile set, falling back to 1 default profile: "default"
+16:40:59.597 [main] INFO  searchengine.Application - Started Application in 47.692 seconds (process running for 67.089)
+21:46:28.904 [main] INFO  searchengine.Application - Starting Application using Java 19.0.1 with PID 3648 (C:\Users\настя\Desktop\searchengineD\target\classes started by настя in C:\Users\настя\Desktop\searchengineD)
+21:46:28.945 [main] INFO  searchengine.Application - No active profile set, falling back to 1 default profile: "default"
+21:51:16.463 [main] INFO  searchengine.Application - Starting Application using Java 19.0.1 with PID 1940 (C:\Users\настя\Desktop\searchengineD\target\classes started by настя in C:\Users\настя\Desktop\searchengineD)
+21:51:16.486 [main] INFO  searchengine.Application - No active profile set, falling back to 1 default profile: "default"
+21:52:02.300 [main] INFO  searchengine.Application - Started Application in 54.501 seconds (process running for 90.484)
+22:02:40.269 [main] INFO  searchengine.Application - Starting Application using Java 19.0.1 with PID 6556 (C:\Users\настя\Desktop\searchengineD\target\classes started by настя in C:\Users\настя\Desktop\searchengineD)
+22:02:40.339 [main] INFO  searchengine.Application - No active profile set, falling back to 1 default profile: "default"
+22:03:41.755 [main] INFO  searchengine.Application - Started Application in 77.831 seconds (process running for 98.109)
+22:08:34.683 [main] INFO  searchengine.Application - Starting Application using Java 19.0.1 with PID 5324 (C:\Users\настя\Desktop\searchengineD\target\classes started by настя in C:\Users\настя\Desktop\searchengineD)
+22:08:34.691 [main] INFO  searchengine.Application - No active profile set, falling back to 1 default profile: "default"
+22:08:48.048 [main] INFO  searchengine.Application - Started Application in 14.379 seconds (process running for 18.653)
+22:14:04.969 [main] INFO  searchengine.Application - Starting Application using Java 19.0.1 with PID 5180 (C:\Users\настя\Desktop\searchengineD\target\classes started by настя in C:\Users\настя\Desktop\searchengineD)
+22:14:04.975 [main] INFO  searchengine.Application - No active profile set, falling back to 1 default profile: "default"
+22:14:37.208 [main] INFO  searchengine.Application - Started Application in 33.348 seconds (process running for 36.543)
+22:17:09.163 [main] INFO  searchengine.Application - Starting Application using Java 19.0.1 with PID 6324 (C:\Users\настя\Desktop\searchengineD\target\classes started by настя in C:\Users\настя\Desktop\searchengineD)
+22:17:09.184 [main] INFO  searchengine.Application - No active profile set, falling back to 1 default profile: "default"
+22:17:34.663 [main] INFO  searchengine.Application - Started Application in 26.6 seconds (process running for 31.169)
+22:17:57.578 [main] INFO  searchengine.Application - Starting Application using Java 19.0.1 with PID 6656 (C:\Users\настя\Desktop\searchengineD\target\classes started by настя in C:\Users\настя\Desktop\searchengineD)
+22:17:57.584 [main] INFO  searchengine.Application - No active profile set, falling back to 1 default profile: "default"
+22:18:19.013 [main] INFO  searchengine.Application - Started Application in 22.338 seconds (process running for 23.894)
+22:19:22.474 [main] INFO  searchengine.Application - Starting Application using Java 19.0.1 with PID 7608 (C:\Users\настя\Desktop\searchengineD\target\classes started by настя in C:\Users\настя\Desktop\searchengineD)
+22:19:22.485 [main] INFO  searchengine.Application - No active profile set, falling back to 1 default profile: "default"
+22:20:06.744 [main] INFO  searchengine.Application - Started Application in 45.428 seconds (process running for 46.942)
