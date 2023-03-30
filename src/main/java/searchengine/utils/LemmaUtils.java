@@ -7,7 +7,6 @@ import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.safety.Safelist;
-import searchengine.model.error.ApplicationError;
 
 import java.util.HashMap;
 import java.util.List;

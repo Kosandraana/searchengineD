@@ -8,7 +8,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import searchengine.model.*;
-import searchengine.model.error.ApplicationError;
+import searchengine.utils.ApplicationError;
 import searchengine.repository.*;
 import searchengine.utils.LemmaUtils;
 

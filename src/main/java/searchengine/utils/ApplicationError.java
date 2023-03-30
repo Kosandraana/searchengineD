@@ -1,4 +1,4 @@
-package searchengine.model.error;
+package searchengine.utils;
 
 public class ApplicationError extends RuntimeException {
 

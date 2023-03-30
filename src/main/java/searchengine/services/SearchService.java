@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import searchengine.dto.ApiResponse;
 import searchengine.dto.SearchResult;
 import searchengine.model.*;
-import searchengine.model.error.ApplicationError;
+import searchengine.utils.ApplicationError;
 import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.SitePageRepository;

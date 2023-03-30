@@ -8,7 +8,7 @@ import searchengine.config.SiteConfig;
 import searchengine.config.SitesList;
 import searchengine.model.Site;
 import searchengine.model.SiteStatus;
-import searchengine.model.error.ApplicationError;
+import searchengine.utils.ApplicationError;
 import searchengine.repository.*;
 import searchengine.task.PageRecursiveTask;
 
