@@ -64,15 +64,14 @@ public class PageRecursiveTask extends RecursiveTask<Boolean> {
             String formatUrl = getFormatUrl(url);
             if (formatUrl.isBlank()) {
                 return runIndexing;
-            }
-            if (isFirst) {
-                sitePageRepository.insert(
-                    site.getId(), formatUrl,
-                    response.statusCode(), document.html());
-                isFirst = false;
+//            }
+//            if (isFirst) {
+//                sitePageRepository.insert(site.getId(), formatUrl,
+//                    response.statusCode(), document.html());
+//                isFirst = false;
             } else {
-                int update = sitePageRepository.update(
-                    response.statusCode(), document.html(), site.getId(), formatUrl);
+                int update = sitePageRepository.update(response.statusCode(),
+                        document.html(), site.getId(), formatUrl);
                 if (update < 1) {
                     throw new ApplicationError("Страница не обновлена");
                 }
@@ -87,8 +86,7 @@ public class PageRecursiveTask extends RecursiveTask<Boolean> {
             appendLemma(page, document);
         } catch (Exception ex) {
             if (!runIndexing) {
-                siteRepository.updateFailedStatus(
-                    SiteStatus.FAILED.name(), ex.getMessage(), site.getId());
+                siteRepository.updateFailedStatus(SiteStatus.FAILED.name(), ex.getMessage(), site.getId());
             } else {
                 siteRepository.updateLastError(ex.getMessage(), site.getId());
             }
