@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,12 +11,13 @@ import searchengine.model.SiteStatus;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.SitePageRepository;
 import searchengine.repository.SiteRepository;
+import searchengine.services.interfacesServices.StatisticsService;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class StatisticsService {
+public class StatisticsServiceImpl implements StatisticsService {
 
     @Autowired
     private SiteRepository siteRepository;
@@ -24,7 +25,7 @@ public class StatisticsService {
     private SitePageRepository sitePageRepository;
     @Autowired
     private LemmaRepository lemmaRepository;
-
+@Override
     public StatisticsResponse getStatistics() {
         List<Site> sites = siteRepository.findAll();
         TotalStatistics total = new TotalStatistics();
@@ -32,8 +33,8 @@ public class StatisticsService {
 
         List<DetailedStatisticsItem> detailed = new ArrayList<>();
         for (Site site : sites) {
-            long pageCountBy = sitePageRepository.countBy(site.getId());
-            long lemmaCountBy = lemmaRepository.countBy(site.getId());
+            long pageCountBy = sitePageRepository.countAllBySiteId(site.getId());
+            long lemmaCountBy = lemmaRepository.countByLemmaBySiteId(site.getId());
             total.setPages(total.getPages() + pageCountBy)
                 .setLemmas(total.getLemmas() + lemmaCountBy);
             if (!total.isIndexing() && site.getStatus() == SiteStatus.INDEXING) {

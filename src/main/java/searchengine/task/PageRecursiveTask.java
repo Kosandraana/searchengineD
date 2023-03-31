@@ -32,14 +32,13 @@ public class PageRecursiveTask extends RecursiveTask<Boolean> {
     public PageRecursiveTask(Site site, String url,
                              SiteRepository siteRepository,
                              SitePageRepository sitePageRepository,
-                             LemmaRepository lemmaRepository,
-                             JdbcRepository jdbcRepository) {
+                             LemmaRepository lemmaRepository, IndexRepository indexRepository) {
         this.site = site;
         this.url = url;
         this.siteRepository = siteRepository;
         this.sitePageRepository = sitePageRepository;
         this.lemmaRepository = lemmaRepository;
-        this.jdbcRepository = jdbcRepository;
+        this.indexRepository = indexRepository;
     }
 
     private final Site site;
@@ -47,7 +46,6 @@ public class PageRecursiveTask extends RecursiveTask<Boolean> {
     private final SiteRepository siteRepository;
     private final SitePageRepository sitePageRepository;
     private final LemmaRepository lemmaRepository;
-    private final JdbcRepository jdbcRepository;
     private IndexRepository indexRepository;
     private boolean isFirst = true;
     private String firstUrl;
@@ -70,20 +68,18 @@ public class PageRecursiveTask extends RecursiveTask<Boolean> {
             if (isFirst) {
                 sitePageRepository.insert(
                     site.getId(), formatUrl,
-                    response.statusCode(), document.html()
-                );
+                    response.statusCode(), document.html());
                 isFirst = false;
             } else {
                 int update = sitePageRepository.update(
-                    response.statusCode(), document.html(), site.getId(), formatUrl
-                );
+                    response.statusCode(), document.html(), site.getId(), formatUrl);
                 if (update < 1) {
                     throw new ApplicationError("Страница не обновлена");
                 }
                 siteRepository.updateStatusTime(LocalDateTime.now(), site.getId());
             }
             parseChildren(document);
-            SitePage page = sitePageRepository.getByPath(formatUrl, site.getId());
+            SitePage page = sitePageRepository.findByPathAndSiteId(formatUrl, site.getId());
             if (page == null) {
                 log.error("SitePage is null");
                 throw new ApplicationError("Страница не найдена");
@@ -92,8 +88,7 @@ public class PageRecursiveTask extends RecursiveTask<Boolean> {
         } catch (Exception ex) {
             if (!runIndexing) {
                 siteRepository.updateFailedStatus(
-                    SiteStatus.FAILED.name(), ex.getMessage(), site.getId()
-                );
+                    SiteStatus.FAILED.name(), ex.getMessage(), site.getId());
             } else {
                 siteRepository.updateLastError(ex.getMessage(), site.getId());
             }
@@ -118,7 +113,7 @@ public class PageRecursiveTask extends RecursiveTask<Boolean> {
                     PageRecursiveTask task = new PageRecursiveTask(
                         site, absUrl, siteRepository,
                         sitePageRepository, lemmaRepository,
-                        jdbcRepository, indexRepository,
+                        indexRepository,
                         false, firstUrl
                     );
                     task.fork();
@@ -155,10 +150,10 @@ public class PageRecursiveTask extends RecursiveTask<Boolean> {
     }
 
     private void removePage(String url) {
-        Long pageId = sitePageRepository.getIdByPath(url, site.getId());
+        Long pageId = sitePageRepository.getIdByPathAndSiteId(url, site.getId());
         if (pageId != null) {
             lemmaRepository.updateByPage(pageId);
-            indexRepository.deleteByPageId(pageId);
+            indexRepository.deleteAllByPageId(pageId);
             sitePageRepository.deleteById(pageId);
         }
     }
@@ -178,7 +173,7 @@ public class PageRecursiveTask extends RecursiveTask<Boolean> {
                 (lemma, count) ->
                     lemmas.add(new Lemma(site, lemma, 1))
             );
-            jdbcRepository.insertLemmaBatch(lemmas);
+            lemmaRepository.insertLemmaBatch(lemmas);
             List<Lemma> lemmaSaved = lemmaRepository.getByLemma(
                 site.getId(), lemmasRaw.keySet()
             );
@@ -191,7 +186,7 @@ public class PageRecursiveTask extends RecursiveTask<Boolean> {
                     new Index(page, lemma, count)
                 );
             }
-            jdbcRepository.insertIndexBatch(indices);
+            indexRepository.insertIndexBatch(indices);
         } catch (Exception ex) {
             log.error("Append lemmas failed", ex);
             throw new ApplicationError("Ошибка лемматизации");

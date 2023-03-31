@@ -14,14 +14,9 @@ import java.util.List;
 @Transactional
 public interface SitePageRepository extends JpaRepository<SitePage, Long> {
 
-    @Query(value = "SELECT sp.id FROM site_page sp " +
-            "WHERE sp.path = :path AND site_id = :siteId",
-        nativeQuery = true)
-    Long getIdByPath(String path, Long siteId);
+    Long getIdByPathAndSiteId(String path, Long siteId);
 
-    @Query(value = "SELECT sp FROM SitePage sp " +
-            "WHERE sp.path = :path AND site.id = :siteId")
-    SitePage getByPath(String path, Long siteId);
+    SitePage findByPathAndSiteId(String path, Long siteId);
 
     @Query(value = "SELECT sp FROM SitePage sp " +
             "JOIN Index i ON sp.id = i.page.id " +
@@ -33,9 +28,7 @@ public interface SitePageRepository extends JpaRepository<SitePage, Long> {
             "WHERE i.lemma.id = :lemmaId AND sp.id IN (:pageIds)")
     List<SitePage> getByLemma(Long lemmaId, List<Long> pageIds, Pageable pageable);
 
-    @Query(value = "SELECT COUNT(*) FROM site_page WHERE site_id = :siteId",
-        nativeQuery = true)
-    long countBy(Long siteId);
+    Long countAllBySiteId(Long siteId);
 
     @Modifying
     @Query(value = "INSERT INTO site_page(site_id, path) VALUES(:siteId, :path) " +
@@ -58,7 +51,5 @@ public interface SitePageRepository extends JpaRepository<SitePage, Long> {
     int update(int code, String content, Long siteId, String path);
 
     @Modifying
-    @Query(value = "DELETE FROM site_page WHERE site_id = :siteId",
-        nativeQuery = true)
-    void deleteBySiteId(Long siteId);
+    void deleteAllBySiteId(Long siteId);
 }

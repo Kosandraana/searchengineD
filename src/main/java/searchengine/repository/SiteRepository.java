@@ -6,19 +6,19 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.model.Site;
+import searchengine.model.SiteStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 @Transactional
 public interface SiteRepository extends JpaRepository<Site, Long> {
 
-    @Query(value = "SELECT id FROM site WHERE url = :url",
-        nativeQuery = true)
     Long getIdByUrl(String url);
 
-    @Query(value = "SELECT s FROM Site s WHERE s.url = :url")
-    Site getByUrl(String url);
+    Site findByUrl(String url);
+    List<Site> findByStatus(SiteStatus status);
 
     @Modifying
     @Query(value = "UPDATE site SET status = :status WHERE id = :id",
@@ -48,7 +48,5 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
     void updateLastError(String error, Long id);
 
     @Modifying
-    @Query(value = "DELETE FROM site WHERE url = :url",
-        nativeQuery = true)
-    void deleteByUrl(String url);
+    void deleteAllByUrl(String url);
 }

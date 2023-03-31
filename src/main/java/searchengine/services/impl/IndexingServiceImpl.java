@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +8,7 @@ import searchengine.config.SiteConfig;
 import searchengine.config.SitesList;
 import searchengine.model.Site;
 import searchengine.model.SiteStatus;
+import searchengine.services.interfacesServices.IndexingService;
 import searchengine.utils.ApplicationError;
 import searchengine.repository.*;
 import searchengine.task.PageRecursiveTask;
@@ -21,7 +22,7 @@ import java.util.concurrent.ForkJoinPool;
 
 @Slf4j
 @Service
-public class IndexingService {
+public class IndexingServiceImpl implements IndexingService {
 
     private final int PROCESSORS = Runtime.getRuntime().availableProcessors();
     private final Executor executor = Executors.newFixedThreadPool(PROCESSORS);
@@ -37,9 +38,7 @@ public class IndexingService {
     private LemmaRepository lemmaRepository;
     @Autowired
     private IndexRepository indexRepository;
-    @Autowired
-    private JdbcRepository jdbcRepository;
-
+@Override
     public void startIndexing() {
         if (!tasks.isEmpty()) {
             throw new ApplicationError("Индексация уже запущена");
@@ -59,8 +58,7 @@ public class IndexingService {
         PageRecursiveTask task = new PageRecursiveTask(
             site, siteConfig.getUrl(),
             siteRepository, sitePageRepository,
-            lemmaRepository, jdbcRepository
-        );
+            lemmaRepository, indexRepository);
         tasks.add(task);
         ForkJoinPool forkJoinPool = new ForkJoinPool();
         forkJoinPool.submit(task);
@@ -72,7 +70,7 @@ public class IndexingService {
 
     private Site updateSite(SiteConfig siteConfig, boolean delete) {
         String url = siteConfig.getUrl();
-        Site site = siteRepository.getByUrl(url);
+        Site site = siteRepository.findByUrl(url);
         if (site == null) {
             site = new Site(
                 siteConfig.getUrl(), siteConfig.getName(),
@@ -81,8 +79,8 @@ public class IndexingService {
             return siteRepository.saveAndFlush(site);
         } else if (delete) {
             indexRepository.deleteBySiteId(site.getId());
-            lemmaRepository.deleteBySiteId(site.getId());
-            sitePageRepository.deleteBySiteId(site.getId());
+            lemmaRepository.deleteAllBySiteId(site.getId());
+            sitePageRepository.deleteAllBySiteId(site.getId());
             site.setName(siteConfig.getName())
                 .setStatus(SiteStatus.INDEXING)
                 .setStatusTime(LocalDateTime.now())
@@ -95,7 +93,7 @@ public class IndexingService {
         }
         return site;
     }
-
+@Override
     public void stopIndexing() {
         if (tasks.isEmpty()) {
             throw new ApplicationError("Индексация не запущена");
@@ -106,7 +104,7 @@ public class IndexingService {
             }
         }
     }
-
+@Override
     public void indexPage(String url) {
         boolean outsideUrl = true;
         for (SiteConfig siteConfig : getSites()) {
@@ -122,7 +120,7 @@ public class IndexingService {
                         new PageRecursiveTask(
                             site, url, siteRepository,
                             sitePageRepository, lemmaRepository,
-                            jdbcRepository, indexRepository,
+                            indexRepository,
                             url.equals(parentUrl), parentUrl
                         ).indexPage();
                     }

@@ -3,10 +3,14 @@ package searchengine.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.model.Index;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 @Repository
@@ -23,9 +27,7 @@ public interface IndexRepository extends JpaRepository<Index, Long> {
     int totalRelevance(List<Long> pageIds);
 
     @Modifying
-    @Query(value = "DELETE FROM `index` WHERE page_id = :pageId",
-        nativeQuery = true)
-    void deleteByPageId(Long pageId);
+    void deleteAllByPageId(Long pageId);
 
     @Modifying
     @Query(value = "DELETE i FROM `index` i " +
@@ -33,4 +35,27 @@ public interface IndexRepository extends JpaRepository<Index, Long> {
             "WHERE p.site_id = :siteId",
         nativeQuery = true)
     void deleteBySiteId(Long siteId);
+
+    default void insertIndexBatch(List<Index> indices) {
+        JdbcTemplate jdbcTemplate = new JdbcTemplate();
+        jdbcTemplate.batchUpdate(
+                "INSERT INTO `index` (lemma_id, page_id, index_rank) " +
+                        "VALUES (?, ?, ?) AS new(l, p, r) " +
+                        "ON DUPLICATE KEY UPDATE index_rank = index_rank + new.r",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        Index indexPage = indices.get(i);
+                        int index = 0;
+                        ps.setLong(++index, indexPage.getLemma().getId());
+                        ps.setLong(++index, indexPage.getPage().getId());
+                        ps.setDouble(++index, indexPage.getRank());
+                    }
+                    @Override
+                    public int getBatchSize() {
+                        return indices.size();
+                    }
+                }
+        );
+    }
 }

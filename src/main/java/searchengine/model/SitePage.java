@@ -40,4 +40,12 @@ public class SitePage {
         columnDefinition = "mediumtext CHARACTER SET utf8mb4 " +
             "COLLATE utf8mb4_general_ci")
     private String content;
+    public SitePage(){};
+
+    public SitePage(Site site, String path, int code, String content) {
+        this.site = site;
+        this.path = path;
+        this.code = code;
+        this.content = content;
+    }
 }

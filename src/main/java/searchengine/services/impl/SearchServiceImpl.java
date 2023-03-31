@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import searchengine.dto.ApiResponse;
 import searchengine.dto.SearchResult;
 import searchengine.model.*;
+import searchengine.services.interfacesServices.SearchService;
 import searchengine.utils.ApplicationError;
 import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class SearchService {
+public class SearchServiceImpl implements SearchService {
 
     private final int DEFAULT_OFFSET = 0;
     private final int DEFAULT_LIMIT = 20;
@@ -35,7 +36,7 @@ public class SearchService {
     private LemmaRepository lemmaRepository;
     @Autowired
     private IndexRepository indexRepository;
-
+@Override
     public ApiResponse search(SearchFilter filter) {
         if (filter.getQuery() == null || filter.getQuery().trim().isBlank()) {
             throw new ApplicationError("Поисковый запрос не может быть пустым");
@@ -65,7 +66,7 @@ public class SearchService {
         if (url != null && !url.isBlank()) {
             url = url.endsWith("/") ?
                 url.substring(0, url.length() - 1) : url;
-            site = siteRepository.getByUrl(url.trim());
+            site = siteRepository.findByUrl(url.trim());
             if (site == null) {
                 log.error("Site not found: " + url);
                 throw new ApplicationError("Сайт не найден");
