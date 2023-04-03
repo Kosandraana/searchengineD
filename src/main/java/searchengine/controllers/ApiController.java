@@ -13,8 +13,8 @@ import java.io.IOException;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/")
-public class ApiController  {
+@RequestMapping("/api")
+public class ApiController {
 
     private final StatisticsService statisticsService;
     private final IndexingService indexingService;
