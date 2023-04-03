@@ -4,7 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-public class DefaultController extends CommonController {
+public class DefaultController {
 
     /**
      * Метод формирует страницу из HTML-файла index.html,

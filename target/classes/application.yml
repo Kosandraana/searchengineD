@@ -9,29 +9,18 @@ indexing-settings:
 
 #
 server:
-  address: 0.0.0.0
   port: 8080
-  compression:
-    enabled: true
-    mime-types: application/javascript, text/css, text/javascript
-  servlet:
-    session:
-      cookie:
-        http-only: true
-
----
 
 spring:
   datasource:
-    jdbc-url: jdbc:mysql://localhost:3306/search_engine?useUnicode=true&characterEncoding=UTF-8&useSSL=false&jdbcCompliantTruncation=false&zeroDateTimeBehavior=convertToNull&useAffectedRows=true&&autoReconnect=true
     username: root
     password: 97nastya
-    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
   jpa:
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update
-    generate-ddl: true
+      ddl-auto: create
+      generate-ddl: true
     show-sql: true

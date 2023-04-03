@@ -3,68 +3,47 @@ package searchengine.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.model.Lemma;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.List;
+import java.io.Serializable;
 import java.util.Optional;
 
 @Repository
-@Transactional
-public interface LemmaRepository extends JpaRepository<Lemma, Long> {
+public interface LemmaRepository extends JpaRepository<Lemma, Integer>, Serializable {
+    Optional<Lemma> findFirstByLemma(String lemma);
 
-    @Query(value = "SELECT l FROM Lemma l " +
-            "WHERE l.site.id = :siteId AND l.lemma IN (:lemmas) " +
-            "ORDER BY l.frequency")
-    List<Lemma> getByLemma(Long siteId, Collection<String> lemmas);
-    Optional<Lemma> findBySiteIdAndLemma(Long siteId, String lemma);
+    Optional<Lemma> findBySiteIdAndLemma(int siteId, String lemma);
 
-    boolean existsBySiteIdAndLemma(Long siteId, String lemma);
+    boolean existsBySiteIdAndLemma(int siteId, String lemma);
 
-    @Query(value = "SELECT l FROM Lemma l WHERE l.lemma IN (:lemmas) " +
-            "ORDER BY l.frequency")
-    List<Lemma> getByLemma(Collection<String> lemmas);
-
-    @Query(value = "SELECT COUNT(*) FROM lemma WHERE site_id = :siteId",
-        nativeQuery = true)
-    long countByLemmaBySiteId(Long siteId);
-
+    @Transactional
     @Modifying
-    @Query(value = "UPDATE lemma l " +
-            "JOIN `index` i ON i.lemma_id = l.id " +
-            "SET l.frequency = IF(l.frequency > 0, l.frequency - 1, 0) " +
-            "WHERE i.page_id = :pageId",
-        nativeQuery = true)
-    void updateByPage(Long pageId);
+    @Query(value = "UPDATE `lemma` l SET l.frequency = l.frequency - 1 WHERE l.site_id = :siteId AND l.lemma = :lemma", nativeQuery = true)
+    void decrementAllFrequencyBySiteIdAndLemma(@Param("siteId") int siteId, @Param("lemma") String lemma);
 
-    @Modifying
-    void deleteAllBySiteId(Long siteId);
+    @Query(value = "SELECT COUNT(*) FROM `lemma` WHERE `site_id` =:site_id", nativeQuery = true)
+    int countLemmasBySiteId(@Param("site_id") int site_id);
 
-    default void insertLemmaBatch(List<Lemma> lemmas) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
-        jdbcTemplate.batchUpdate("INSERT INTO lemma (site_id, lemma, frequency) " +
-                        "VALUES (?, ?, ?) AS new(s, l, f) " +
-                        "ON DUPLICATE KEY UPDATE frequency = frequency + new.f",
-                new BatchPreparedStatementSetter() {
-                    @Override
-                    public void setValues(PreparedStatement ps, int i) throws SQLException {
-                        Lemma lemma = lemmas.get(i);
-                        int index = 0;
-                        ps.setLong(++index, lemma.getSite().getId());
-                        ps.setString(++index, lemma.getLemma());
-                        ps.setInt(++index, lemma.getFrequency());
-                    }
-                    @Override
-                    public int getBatchSize() {
-                        return lemmas.size();
-                    }
-                }
-        );
-    }
+    @Query(value = """
+                  SELECT l.frequency / count(p.id) as percent
+                  FROM `lemma` as l
+                  JOIN `page` as p ON l.site_id = p.site_id
+                  WHERE l.id = :lemmaId
+                  """, nativeQuery = true)
+    double percentageLemmaOnPagesById(@Param("lemmaId") int lemmaId);
+
+    @Query(value = """
+                  SELECT max(percentage_lemma) FROM
+                  (
+                  SELECT l.frequency / count(p.id) as percentage_lemma
+                  FROM `lemma` as l
+                  JOIN `page` as p ON l.site_id = p.site_id
+                  WHERE l.site_id = :siteId
+                  GROUP BY l.id
+                  ) as percentage_lemmas_on_page
+                  """, nativeQuery = true)
+    double findMaxPercentageLemmaOnPagesBySiteId(@Param("siteId") int siteId);
 }

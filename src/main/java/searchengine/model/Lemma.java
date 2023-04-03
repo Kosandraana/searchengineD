@@ -1,43 +1,42 @@
 package searchengine.model;
 
-import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.Accessors;
+import org.hibernate.annotations.BatchSize;
 
+import javax.persistence.*;
+import java.util.List;
+
+@Entity
 @Getter
 @Setter
-@NoArgsConstructor
-@Accessors(chain = true)
-@Entity
-@Table(name = "lemma",
-    uniqueConstraints = @UniqueConstraint(
-        columnNames = {"lemma", "site_id"}))
-public class Lemma {
+@Table(name = "lemma",  uniqueConstraints = { @UniqueConstraint(name = "lemmaAndSite_id", columnNames = { "lemma", "site_id" } ) })
+public class Lemma  {
 
-    public Lemma(Site site, String lemma, int frequency) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    @ManyToOne(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.LAZY)
+    @JoinColumn(name = "site_id", referencedColumnName = "id")
+    private Site site;
+
+    @Column(columnDefinition = "VARCHAR(255)", nullable = false)
+    private String lemma;
+
+    @Column(nullable = false)
+    private int frequency;
+
+    @OneToMany(mappedBy = "lemma", cascade = CascadeType.ALL)
+    @BatchSize(size = 2)
+    private List<Index> indexList;
+
+    public Lemma(){};
+
+    public Lemma(Site site, String lemma, int frequency){
         this.site = site;
         this.lemma = lemma;
         this.frequency = frequency;
     }
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
 
-    @ManyToOne(cascade = CascadeType.MERGE, optional = false)
-    @JoinColumn(name = "site_id",
-        referencedColumnName = "id",
-        nullable = false)
-    private Site site;
-
-    @Column(name = "lemma", nullable = false)
-    private String lemma;
-
-    @Column(name = "frequency", nullable = false)
-    private int frequency;
-
-    @Transient
-    private int position;
 }

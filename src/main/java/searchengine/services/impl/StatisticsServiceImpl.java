@@ -1,7 +1,8 @@
 package searchengine.services.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import searchengine.config.SitesList;
 import searchengine.dto.statistics.DetailedStatisticsItem;
 import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
@@ -9,55 +10,58 @@ import searchengine.dto.statistics.TotalStatistics;
 import searchengine.model.Site;
 import searchengine.model.SiteStatus;
 import searchengine.repository.LemmaRepository;
-import searchengine.repository.SitePageRepository;
+import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
+import searchengine.services.UtilParsing;
 import searchengine.services.interfacesServices.StatisticsService;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class StatisticsServiceImpl implements StatisticsService {
+@RequiredArgsConstructor
+public class StatisticsServiceImpl extends UtilParsing implements StatisticsService {
 
-    @Autowired
-    private SiteRepository siteRepository;
-    @Autowired
-    private SitePageRepository sitePageRepository;
-    @Autowired
-    private LemmaRepository lemmaRepository;
-@Override
+    private final SitesList sites;
+    private final SiteRepository siteRepository;
+    private final LemmaRepository lemmaRepository;
+    private final PageRepository pageRepository;
+
+    @Override
     public StatisticsResponse getStatistics() {
-        List<Site> sites = siteRepository.findAll();
-        TotalStatistics total = new TotalStatistics();
-        total.setSites(sites.size());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        int pagesCount = pageRepository.findAll().size();
+        int lemmasCount = lemmaRepository.findAll().size();
 
-        List<DetailedStatisticsItem> detailed = new ArrayList<>();
-        for (Site site : sites) {
-            long pageCountBy = sitePageRepository.countAllBySiteId(site.getId());
-            long lemmaCountBy = lemmaRepository.countByLemmaBySiteId(site.getId());
-            total.setPages(total.getPages() + pageCountBy)
-                .setLemmas(total.getLemmas() + lemmaCountBy);
-            if (!total.isIndexing() && site.getStatus() == SiteStatus.INDEXING) {
-                total.setIndexing(true);
-            }
-            detailed.add(
-                new DetailedStatisticsItem()
-                    .setName(site.getName())
-                    .setUrl(site.getUrl())
-                    .setStatus(site.getStatus().name())
-                    .setStatusTime(site.getStatusTime())
-                    .setError(
-                        site.getLastError() != null ? site.getLastError() : ""
-                    )
-                    .setPages(pageCountBy)
-                    .setLemmas(lemmaCountBy)
-            );
+        TotalStatistics total = new TotalStatistics();
+        total.setSites(sites.getSites().size());
+        if(isIndexing(SiteStatus.INDEXING)) {
+            total.setIndexing(true);
+        }else {
+            total.setIndexing(false);
         }
 
-        StatisticsData data = new StatisticsData();
-        data.setTotal(total)
-            .setDetailed(detailed);
+        List<DetailedStatisticsItem> detailed = new ArrayList<>();
+        List<Site> sitesList = siteRepository.findAll();
+        for(Site site : sitesList) {
+            DetailedStatisticsItem item = new DetailedStatisticsItem();
+            item.setName(site.getName());
+            item.setUrl(site.getUrl());
+            item.setPages(pageRepository.countPagesBySiteId(site.getId()));
+            item.setLemmas(lemmaRepository.countLemmasBySiteId(site.getId()));
+            item.setStatus(site.getStatus().toString());
+            item.setStatusTime(site.getStatusTime().format(formatter));
+        item.setError(site.getLastError());
+            total.setPages(pagesCount);
+            total.setLemmas(lemmasCount);
+            detailed.add(item);
+        }
+
         StatisticsResponse response = new StatisticsResponse();
+        StatisticsData data = new StatisticsData();
+        data.setTotal(total);
+        data.setDetailed(detailed);
         response.setStatistics(data);
         response.setResult(true);
         return response;

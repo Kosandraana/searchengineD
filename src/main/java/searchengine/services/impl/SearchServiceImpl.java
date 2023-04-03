@@ -1,161 +1,186 @@
 package searchengine.services.impl;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import searchengine.dto.ApiResponse;
-import searchengine.dto.SearchResult;
-import searchengine.model.*;
-import searchengine.services.interfacesServices.SearchService;
-import searchengine.utils.ApplicationError;
+import searchengine.config.SiteConfig;
+import searchengine.config.SitesList;
+import searchengine.dto.search.SearchDto;
+import searchengine.dto.search.SearchResponse;
+import searchengine.dto.NormalFormWordAndIndex;
+import searchengine.model.Lemma;
+import searchengine.model.Page;
+import searchengine.model.Site;
 import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
-import searchengine.repository.SitePageRepository;
+import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-import searchengine.utils.LemmaUtils;
-import searchengine.utils.SnippetUtils;
+import searchengine.services.LemmaFinder;
+import searchengine.services.UtilParsing;
+import searchengine.services.interfacesServices.SearchService;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
-@Slf4j
 @Service
-public class SearchServiceImpl implements SearchService {
+@RequiredArgsConstructor
+public class SearchServiceImpl extends UtilParsing implements SearchService {
 
-    private final int DEFAULT_OFFSET = 0;
-    private final int DEFAULT_LIMIT = 20;
-
+    private final LemmaFinder lemmaFinder = getLemmaFinder();
     @Autowired
-    private SiteRepository siteRepository;
+    private final SiteRepository siteRepository;
     @Autowired
-    private SitePageRepository sitePageRepository;
+    private final LemmaRepository lemmaRepository;
     @Autowired
-    private LemmaRepository lemmaRepository;
+    private final IndexRepository indexRepository;
     @Autowired
-    private IndexRepository indexRepository;
-@Override
-    public ApiResponse search(SearchFilter filter) {
-        if (filter.getQuery() == null || filter.getQuery().trim().isBlank()) {
-            throw new ApplicationError("Поисковый запрос не может быть пустым");
+    private final PageRepository pageRepository;
+    private final SitesList sites;
+    private final static Logger logger = UtilParsing.getLogger();
+    private final static Marker INFO_PARSING = UtilParsing.getInfoMarker();
+
+    @Override
+    public SearchResponse search(String query, String siteUrl, int offset, int limit) {
+        if (query.isEmpty()){
+            return new SearchResponse()
+                    .setResult(false)
+                    .setError("Задан пустой поисковый запрос");
         }
-        String query = filter.getQuery().trim();
-        ApiResponse response = new ApiResponse(true, 0, new ArrayList<>());
-        Site site = searchSite(filter.getSite());
-        HashMap<String, Integer> sourceLemmas = LemmaUtils.lemmatization(query, false);
-        List<Lemma> existLemmas =
-            site == null ?
-                lemmaRepository.getByLemma(sourceLemmas.keySet()) :
-                lemmaRepository.getByLemma(site.getId(), sourceLemmas.keySet());
-        List<SitePage> matchPages = searchPages(existLemmas, filter);
-        if (matchPages.isEmpty()) {
-            return response;
+        Pageable pageable = Pageable.ofSize(limit).withPage(offset / limit);
+        List<SearchDto> data = new ArrayList<>();
+
+        if(siteUrl.isEmpty()){
+            data.addAll(searchAllSites(query, pageable));
+        }else {
+            data.addAll(searchSite(query, siteUrl, pageable));
         }
-        List<SearchResult> result = collectResultByRelevance(
-            matchPages, existLemmas, sourceLemmas.keySet()
-        );
-        return response
-            .setCount(result.size())
-            .setData(result);
+
+        if(data.isEmpty()){
+            return new SearchResponse()
+                    .setResult(false)
+                    .setError("По вашему поисковому запросу ничего ненайдено или поисковое слово превышает лимит");
+        }
+
+        return new SearchResponse()
+                .setResult(true)
+                .setCount(data.size())
+                .setData(data)
+                .setError("");
     }
 
-    private Site searchSite(String url) {
-        Site site = null;
-        if (url != null && !url.isBlank()) {
-            url = url.endsWith("/") ?
-                url.substring(0, url.length() - 1) : url;
-            site = siteRepository.findByUrl(url.trim());
-            if (site == null) {
-                log.error("Site not found: " + url);
-                throw new ApplicationError("Сайт не найден");
-            }
-            if (site.getStatus() != SiteStatus.INDEXED) {
-                throw new ApplicationError(
-                    "Сайт не проиндексирован: " + site.getStatus()
-                );
-            }
+    public List<SearchDto> searchAllSites(String query, Pageable pageable) {
+        List<SiteConfig> siteList = sites.getSites();
+        List<SearchDto> data = new ArrayList<>();
+        for(SiteConfig site : siteList){
+            data.addAll(searchSite(query, site.getUrl(), pageable));
         }
-        return site;
+        return data;
     }
 
-    private List<SitePage> searchPages(List<Lemma> existLemmas, SearchFilter filter) {
-        List<SitePage> matchPages = new ArrayList<>();
-        for (int i = 0; i < existLemmas.size(); i++) {
-            Lemma lemma = existLemmas.get(i);
-            if (i == 0) {
-                matchPages = sitePageRepository.getByLemma(
-                    lemma.getId(), getLimit(filter, existLemmas.size(), i)
-                );
-            } else {
-                List<Long> ids = getIds(matchPages);
-                matchPages = sitePageRepository.getByLemma(
-                    lemma.getId(), ids, getLimit(filter, existLemmas.size(), i)
-                );
+    public List<SearchDto> searchSite(String query, String siteUrl, Pageable pageable) {
+        Site site = siteRepository.findByUrl(siteUrl).get();
+        List<Lemma> filteredLemmas = getFrequencyFilteredLemmas(query, site);
+        if(filteredLemmas.isEmpty()){
+            List<SearchDto> data = new ArrayList<>();
+            return data;
+        }
+        List<Page> pages = new ArrayList<>();
+        for (Lemma lemma : filteredLemmas) {
+            org.springframework.data.domain.Page<Page> pageEntities = pageRepository.findAllByLemmaId(lemma.getId(), pageable);
+            if (pages.isEmpty()) {
+                pages.addAll(pageEntities.stream().toList());
             }
-            if (matchPages.isEmpty()) {
-                break;
+            pages.retainAll(pageEntities.stream().toList());
+        }
+        TreeSet<Double> setRelevance = new TreeSet<>();
+        for(Page page : pages){
+            Double relevance = indexRepository.absoluteRelevanceByPageId(page.getId());
+            if(relevance != null){
+                setRelevance.add(relevance);
             }
         }
-        return matchPages;
-    }
-
-    private PageRequest getLimit(SearchFilter filter, int lemmasSize, int index) {
-        int offset = DEFAULT_OFFSET;
-        int limit = Integer.MAX_VALUE;
-        if (index == lemmasSize - 1) {
-            offset = filter.getOffset();
-            limit = filter.getLimit() != null ?
-                filter.getLimit() : DEFAULT_LIMIT;
+        Double maxRelevance = setRelevance.last();
+        List<SearchDto> data = new ArrayList<>();
+        for (Page page : pages) {
+            String title = getTitle(page.getContent());
+            String snippet = getSnippet(page ,filteredLemmas);
+            double relativeRelevance = getRelativeRelevance(page.getId(), maxRelevance);
+            data.add(new SearchDto()
+                    .setSite(site.getUrl())
+                    .setSiteName(site.getName())
+                    .setUri(page.getPath())
+                    .setTitle(title)
+                    .setSnippet(snippet)
+                    .setRelevance(relativeRelevance));
         }
-        return PageRequest.of(offset, limit);
+        Collections.sort(data, Collections.reverseOrder());
+        return data;
     }
 
-    private List<SearchResult> collectResultByRelevance(List<SitePage> pages,
-                                                        List<Lemma> existLemmas,
-                                                        Set<String> sourceLemmas) {
-        List<SearchResult> result = new ArrayList<>();
-        List<Long> pageIds = getIds(pages);
-        int totalRelevance = indexRepository.totalRelevance(pageIds);
-        Map<Long, Double> relevanceByLemmas = indexRepository
-            .relevanceByLemmas(pageIds, getIds(existLemmas))
-            .stream()
-            .collect(Collectors.toMap(
-                o -> (Long) o[0], o -> (Double) o[1]
-            ));
-        for (SitePage page : pages) {
-            Double pageRelevance = relevanceByLemmas.get(page.getId());
-            if (pageRelevance == null || pageRelevance == 0) {
-                continue;
-            }
-            Site site = page.getSite();
-            Document document = Jsoup.parse(page.getContent());
-            String title = document
-                .select("title")
-                .remove().text();
-            String snippet = SnippetUtils.generateSnippet(document, sourceLemmas);
-            result.add(
-                new SearchResult(
-                    site.getUrl(), site.getName(),
-                    page.getPath(), title,
-                    snippet, pageRelevance / totalRelevance
-                )
-            );
-        }
-        return result;
-    }
-
-    private <T> List<Long> getIds(List<T> objects) {
-        return objects.stream().map(
-            obj -> {
-                if (obj instanceof SitePage) {
-                    return ((SitePage) obj).getId();
-                } else if (obj instanceof Lemma) {
-                    return ((Lemma) obj).getId();
+    public String getSnippet(Page page, List<Lemma> queryLemmas) {
+        String pageNormalFormContent = lemmaFinder.clearHTMLTags(page);
+        String snippet = "";
+        Map<String, NormalFormWordAndIndex> lemmaAndNormalFormWordAndIndex = lemmaFinder.getLemmaAndNormalFormWordAndIndex(pageNormalFormContent);
+        for (Lemma lemmaEntity : queryLemmas) {
+            for (Map.Entry<String, NormalFormWordAndIndex> entry : lemmaAndNormalFormWordAndIndex.entrySet()){
+                int indexWordInPageContent = pageNormalFormContent.indexOf(entry.getValue().getWord());
+                if(lemmaAndNormalFormWordAndIndex.containsKey(lemmaEntity.getLemma())
+                        && entry.getKey().equals(lemmaEntity.getLemma())
+                        && entry.getValue().getIndex() == indexWordInPageContent){
+                    String trueForm = "<b>" + entry.getValue().getWord() + "</b>";
+                    String trueContent = pageNormalFormContent.replace(entry.getValue().getWord(), trueForm);
+                    String[] suggestions = trueContent.split("\\.");
+                    for(String str : suggestions){
+                        if(str.contains(entry.getValue().getWord())){
+                            snippet = str;
+                        }
+                    }
                 }
-                throw new ApplicationError("Неподдерживаемый тип");
             }
-        ).toList();
+        }
+        return snippet;
+    }
+
+    public String getTitle(String content) {
+        Document document = Jsoup.parse(content);
+        return document.title();
+    }
+
+    public double getRelativeRelevance(int pageId, double maxRelevance) {
+        double absRelevance = indexRepository.absoluteRelevanceByPageId(pageId);
+        return absRelevance / maxRelevance;
+    }
+
+    public List<Lemma> getFrequencyFilteredLemmas(String query, Site site) {
+        double maxPercentLemmaOnPage = lemmaRepository.findMaxPercentageLemmaOnPagesBySiteId(site.getId());
+        double maxFrequencyPercentage = 0.75;
+        double frequencyLimit = maxPercentLemmaOnPage * maxFrequencyPercentage;
+
+        Set<String> queryLemmas = lemmaFinder.getLemmaSet(query);
+        List<Lemma> lemmaEntityList = new ArrayList<>();
+        for(String searchQuery : queryLemmas){
+            Lemma lemma = lemmaRepository.findBySiteIdAndLemma(site.getId(), searchQuery).orElse(null);
+            if(lemma != null) {
+                lemmaEntityList.add(lemma);
+            }
+        }
+        if(lemmaEntityList.isEmpty()){
+            logger.info(INFO_PARSING, "--- " + query + " THERE IS NO SUCH LEMMA ---" + "\n");
+            return lemmaEntityList;
+        }
+
+        List<Lemma> filterFrequency = new ArrayList<>();
+        for(Lemma lemma : lemmaEntityList){
+            if(lemmaRepository.percentageLemmaOnPagesById(lemma.getId()) < frequencyLimit){
+                filterFrequency.add(lemma);
+            }else{
+                logger.info(INFO_PARSING, "--- " + lemma.getLemma() + " LEMMA IS ABOVE THE LIMIT ---" + "\n");
+            }
+        }
+        return filterFrequency.stream().sorted(Comparator.comparing(Lemma::getFrequency)).toList();
     }
 }

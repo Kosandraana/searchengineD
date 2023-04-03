@@ -1,9 +1,7 @@
 package searchengine.services.interfacesServices;
 
-import searchengine.dto.ApiResponse;
-import searchengine.model.SearchFilter;
+import searchengine.dto.search.SearchResponse;
 
 public interface SearchService {
-    ApiResponse search(SearchFilter filter);
-
+    SearchResponse search(String query, String siteUrl, int offset, int limit);
 }

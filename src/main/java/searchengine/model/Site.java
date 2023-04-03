@@ -1,47 +1,55 @@
 package searchengine.model;
 
-import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.Accessors;
+import org.hibernate.annotations.BatchSize;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@Accessors(chain = true)
 @Entity
 @Table(name = "site")
-public class Site {
+@Getter
+@Setter
+public class Site{
 
-    public Site(String url, String name, SiteStatus status,
-                LocalDateTime statusTime, String lastError) {
-        this.url = url;
-        this.name = name;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(nullable = false)
+    private int id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "ENUM('INDEXING', 'INDEXED', 'FAILED')", nullable = false)
+    private SiteStatus status;
+
+    @Column(name = "status_time", columnDefinition = "DATETIME", nullable = false)
+    private LocalDateTime statusTime;
+
+    @Column(name = "last_error", columnDefinition = "TEXT")
+    private String lastError;
+
+    @Column(columnDefinition = "VARCHAR(255)", nullable = false)
+    private String url;
+
+    @Column(columnDefinition = "VARCHAR(255)", nullable = false)
+    private String name;
+
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @BatchSize(size = 2)
+    private List<Page> indexPage;
+
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @BatchSize(size = 2)
+    private List<Lemma> indexLemma;
+
+    public Site(){};
+
+    public Site(SiteStatus status, LocalDateTime statusTime, String lastError, String url, String name) {
         this.status = status;
         this.statusTime = statusTime;
         this.lastError = lastError;
+        this.url = url;
+        this.name = name;
     }
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
-
-    @Column(name = "url", nullable = false)
-    private String url;
-
-    @Column(name = "name", nullable = false)
-    private String name;
-
-    @Enumerated(value = EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private SiteStatus status;
-
-    @Column(name = "status_time", nullable = false)
-    private LocalDateTime statusTime;
-
-    @Column(name = "last_error")
-    private String lastError;
 }

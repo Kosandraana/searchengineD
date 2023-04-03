@@ -1,44 +1,46 @@
 package searchengine.model;
 
-import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.Accessors;
 
+import javax.persistence.*;
+import java.util.Objects;
+
+@Entity
+@Table(name = "`index`")
 @Getter
 @Setter
-@NoArgsConstructor
-@Accessors(chain = true)
-@Entity
-@Table(name = "`index`",
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"page_id", "lemma_id"})
-    })
 public class Index {
 
-    public Index(SitePage page, Lemma lemma, double rank) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    @ManyToOne(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.LAZY)
+    @JoinColumn(name = "page_id", referencedColumnName = "id")
+    private Page page;
+
+    @ManyToOne(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.REFRESH}, fetch = FetchType.LAZY)
+    @JoinColumn(name = "lemma_id", referencedColumnName = "id")
+    private Lemma lemma;
+
+    @Column(name = "`rank`",columnDefinition = "FLOAT NOT NULL", nullable = false)
+    private float rank;
+    public Index(){};
+    public Index(Page page, Lemma lemma, float rank) {
         this.page = page;
         this.lemma = lemma;
         this.rank = rank;
     }
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
-
-    @ManyToOne(cascade = CascadeType.MERGE, optional = false)
-    @JoinColumn(name = "page_id",
-        referencedColumnName = "id",
-        nullable = false)
-    private SitePage page;
-
-    @ManyToOne(cascade = CascadeType.MERGE, optional = false)
-    @JoinColumn(name = "lemma_id",
-        referencedColumnName = "id",
-        nullable = false)
-    private Lemma lemma;
-
-    @Column(name = "index_rank", nullable = false)
-    private double rank;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Index index = (Index) o;
+        return Objects.equals(page, index.page) && Objects.equals(lemma, index.lemma);
+    }
+    @Override
+    public int hashCode() {
+        return Objects.hash(page, lemma);
+    }
 }

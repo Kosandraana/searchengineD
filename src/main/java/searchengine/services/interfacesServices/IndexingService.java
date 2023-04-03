@@ -1,7 +1,8 @@
 package searchengine.services.interfacesServices;
 
+import java.util.Map;
+
 public interface IndexingService {
-    void startIndexing();
-    void stopIndexing();
-    void indexPage(String url);
+    Map<String,String> startedIndexing();
+    Map<String,String> stopIndexing();
 }
