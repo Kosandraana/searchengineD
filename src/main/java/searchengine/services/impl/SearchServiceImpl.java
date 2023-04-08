@@ -82,10 +82,10 @@ public class SearchServiceImpl extends UtilParsing implements SearchService {
     public List<SearchDto> searchSite(String query, String siteUrl, Pageable pageable) {
         Site site = siteRepository.findByUrl(siteUrl).get();
         List<Lemma> filteredLemmas = getFrequencyFilteredLemmas(query, site);
-        if(filteredLemmas.isEmpty()){
-            List<SearchDto> data = new ArrayList<>();
-            return data;
-        }
+//        if(filteredLemmas.isEmpty()){
+//            List<SearchDto> data = new ArrayList<>();
+//            return data;
+//        }
         List<Page> pages = new ArrayList<>();
         for (Lemma lemma : filteredLemmas) {
             org.springframework.data.domain.Page<Page> pageEntities = pageRepository.findAllByLemmaId(lemma.getId(), pageable);
