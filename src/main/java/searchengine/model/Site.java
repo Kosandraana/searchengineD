@@ -3,17 +3,15 @@ package searchengine.model;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
-
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "site")
 @Getter
 @Setter
+@Table(name = "site")
 public class Site{
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
@@ -21,7 +19,7 @@ public class Site{
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "ENUM('INDEXING', 'INDEXED', 'FAILED')", nullable = false)
-    private SiteStatus status;
+    private Status status;
 
     @Column(name = "status_time", columnDefinition = "DATETIME", nullable = false)
     private LocalDateTime statusTime;
@@ -45,7 +43,7 @@ public class Site{
 
     public Site(){};
 
-    public Site(SiteStatus status, LocalDateTime statusTime, String lastError, String url, String name) {
+    public Site(Status status, LocalDateTime statusTime, String lastError, String url, String name) {
         this.status = status;
         this.statusTime = statusTime;
         this.lastError = lastError;

@@ -4,11 +4,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.search.SearchResponse;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.services.interfacesServices.IndexingPageService;
-import searchengine.services.interfacesServices.IndexingService;
-import searchengine.services.interfacesServices.SearchService;
-import searchengine.services.interfacesServices.StatisticsService;
-
+import searchengine.services.InterfacesServices.IndexingService;
+import searchengine.services.InterfacesServices.IndexingPageService;
+import searchengine.services.InterfacesServices.SearchService;
+import searchengine.services.InterfacesServices.StatisticsService;
 import java.io.IOException;
 import java.util.Map;
 

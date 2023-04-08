@@ -12,18 +12,17 @@ import searchengine.config.SiteConfig;
 import searchengine.config.SitesList;
 import searchengine.dto.search.SearchDto;
 import searchengine.dto.search.SearchResponse;
-import searchengine.dto.NormalFormWordAndIndex;
 import searchengine.model.Lemma;
 import searchengine.model.Page;
 import searchengine.model.Site;
+import searchengine.services.parsing.LemmaFinder;
+import searchengine.dto.NormalFormWordAndIndex;
+import searchengine.services.parsing.UtilParsing;
 import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-import searchengine.services.LemmaFinder;
-import searchengine.services.UtilParsing;
-import searchengine.services.interfacesServices.SearchService;
-
+import searchengine.services.InterfacesServices.SearchService;
 import java.util.*;
 
 @Service
@@ -58,11 +57,10 @@ public class SearchServiceImpl extends UtilParsing implements SearchService {
         }else {
             data.addAll(searchSite(query, siteUrl, pageable));
         }
-
         if(data.isEmpty()){
             return new SearchResponse()
                     .setResult(false)
-                    .setError("По вашему поисковому запросу ничего ненайдено или поисковое слово превышает лимит");
+                    .setError("По вашему поисковому запросу ничего не найдено или поисковое слово превышает лимит");
         }
 
         return new SearchResponse()
@@ -76,7 +74,7 @@ public class SearchServiceImpl extends UtilParsing implements SearchService {
         List<SiteConfig> siteList = sites.getSites();
         List<SearchDto> data = new ArrayList<>();
         for(SiteConfig site : siteList){
-            data.addAll(searchSite(query, site.getUrl(), pageable));
+           data.addAll(searchSite(query, site.getUrl(), pageable));
         }
         return data;
     }
@@ -109,13 +107,7 @@ public class SearchServiceImpl extends UtilParsing implements SearchService {
             String title = getTitle(page.getContent());
             String snippet = getSnippet(page ,filteredLemmas);
             double relativeRelevance = getRelativeRelevance(page.getId(), maxRelevance);
-            data.add(new SearchDto()
-                    .setSite(site.getUrl())
-                    .setSiteName(site.getName())
-                    .setUri(page.getPath())
-                    .setTitle(title)
-                    .setSnippet(snippet)
-                    .setRelevance(relativeRelevance));
+            data.add(new SearchDto().setSite(site.getUrl()).setSiteName(site.getName()).setUri(page.getPath()).setTitle(title).setSnippet(snippet).setRelevance(relativeRelevance));
         }
         Collections.sort(data, Collections.reverseOrder());
         return data;
@@ -172,7 +164,6 @@ public class SearchServiceImpl extends UtilParsing implements SearchService {
             logger.info(INFO_PARSING, "--- " + query + " THERE IS NO SUCH LEMMA ---" + "\n");
             return lemmaEntityList;
         }
-
         List<Lemma> filterFrequency = new ArrayList<>();
         for(Lemma lemma : lemmaEntityList){
             if(lemmaRepository.percentageLemmaOnPagesById(lemma.getId()) < frequencyLimit){

@@ -3,18 +3,14 @@ package searchengine.services.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
-import searchengine.dto.statistics.DetailedStatisticsItem;
-import searchengine.dto.statistics.StatisticsData;
-import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.dto.statistics.TotalStatistics;
+import searchengine.dto.statistics.*;
 import searchengine.model.Site;
-import searchengine.model.SiteStatus;
+import searchengine.model.Status;
+import searchengine.services.parsing.UtilParsing;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-import searchengine.services.UtilParsing;
-import searchengine.services.interfacesServices.StatisticsService;
-
+import searchengine.services.InterfacesServices.StatisticsService;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +32,7 @@ public class StatisticsServiceImpl extends UtilParsing implements StatisticsServ
 
         TotalStatistics total = new TotalStatistics();
         total.setSites(sites.getSites().size());
-        if(isIndexing(SiteStatus.INDEXING)) {
+        if(isIndexing(Status.INDEXING)) {
             total.setIndexing(true);
         }else {
             total.setIndexing(false);
@@ -52,7 +48,7 @@ public class StatisticsServiceImpl extends UtilParsing implements StatisticsServ
             item.setLemmas(lemmaRepository.countLemmasBySiteId(site.getId()));
             item.setStatus(site.getStatus().toString());
             item.setStatusTime(site.getStatusTime().format(formatter));
-        item.setError(site.getLastError());
+            item.setError(site.getLastError());
             total.setPages(pagesCount);
             total.setLemmas(lemmasCount);
             detailed.add(item);

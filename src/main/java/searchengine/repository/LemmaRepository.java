@@ -7,16 +7,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.model.Lemma;
-
 import java.io.Serializable;
 import java.util.Optional;
 
 @Repository
 public interface LemmaRepository extends JpaRepository<Lemma, Integer>, Serializable {
     Optional<Lemma> findFirstByLemma(String lemma);
-
     Optional<Lemma> findBySiteIdAndLemma(int siteId, String lemma);
-
     boolean existsBySiteIdAndLemma(int siteId, String lemma);
 
     @Transactional

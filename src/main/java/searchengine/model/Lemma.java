@@ -3,16 +3,15 @@ package searchengine.model;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
-
 import javax.persistence.*;
 import java.util.List;
 
 @Entity
 @Getter
 @Setter
-@Table(name = "lemma",  uniqueConstraints = { @UniqueConstraint(name = "lemmaAndSite_id", columnNames = { "lemma", "site_id" } ) })
+@Table(name = "lemma",  uniqueConstraints = { @UniqueConstraint(name = "lemmaAndSite_id",
+        columnNames = { "lemma", "site_id" } ) })
 public class Lemma  {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -38,5 +37,4 @@ public class Lemma  {
         this.lemma = lemma;
         this.frequency = frequency;
     }
-
 }

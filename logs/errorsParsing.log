@@ -1,0 +1,12 @@
+2023-04-08 17:33:07 [ForkJoinPool-4-worker-1] ERROR  - Unable to acquire JDBC Connection; nested exception is org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC Connection
+
+2023-04-08 17:35:02 [ForkJoinPool-4-worker-2] ERROR  - Read timeout
+
+2023-04-08 17:35:02 [ForkJoinPool-4-worker-4] ERROR  - Read timeout
+
+2023-04-08 17:35:02 [ForkJoinPool-4-worker-3] ERROR  - Read timeout
+
+2023-04-08 18:19:19 [ForkJoinPool-4-worker-4] ERROR  - Could not roll back JPA transaction; nested exception is org.hibernate.TransactionException: Unable to rollback against JDBC Connection
+
+2023-04-08 20:18:03 [ForkJoinPool-4-worker-2] ERROR  - Could not roll back JPA transaction; nested exception is org.hibernate.TransactionException: Unable to rollback against JDBC Connection
+

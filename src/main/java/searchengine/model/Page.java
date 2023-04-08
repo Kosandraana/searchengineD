@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.SQLInsert;
-
 import javax.persistence.*;
 import java.util.List;
 import java.util.Objects;
@@ -12,10 +11,10 @@ import java.util.Objects;
 @Getter
 @Setter
 @Entity
-@Table(name = "page", uniqueConstraints = { @UniqueConstraint(name = "UniqueSite_idAndPath", columnNames = { "site_id", "path" } ) })
+@Table(name = "page", uniqueConstraints = { @UniqueConstraint(name = "UniqueSite_idAndPath",
+        columnNames = { "site_id", "path" } ) })
 @SQLInsert(sql = "INSERT INTO page (code, content, path, site_id) VALUES (?,?,?,?) as new(a,b,c,d) ON DUPLICATE KEY UPDATE content = new.b, code = new.a")
 public class Page {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)

@@ -7,17 +7,17 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import searchengine.config.Connect;
 import searchengine.config.SiteConfig;
 import searchengine.config.SitesList;
+import searchengine.services.parsing.LemmaFinder;
+import searchengine.services.parsing.UtilParsing;
 import searchengine.model.*;
 import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-import searchengine.services.LemmaFinder;
-import searchengine.services.UtilParsing;
-import searchengine.services.interfacesServices.IndexingPageService;
-
+import searchengine.services.InterfacesServices.IndexingPageService;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -37,6 +37,7 @@ public class IndexingPageServiceImpl extends UtilParsing implements IndexingPage
     @Autowired
     private final PageRepository pageRepository;
     private final SitesList sitesList;
+    private final Connect connect;
     private final static Logger logger = UtilParsing.getLogger();
     private final static Marker INFO_PARSING = UtilParsing.getInfoMarker();
     private final static Marker ERROR_PARSING = UtilParsing.getErrorMarker();
@@ -80,7 +81,7 @@ public class IndexingPageServiceImpl extends UtilParsing implements IndexingPage
 
     public void reindexingOnePage(String path, SiteConfig siteConfig, Page page) {
         Site site = siteRepository.findByUrl(siteConfig.getUrl()).get();
-        site.setStatus(SiteStatus.INDEXING);
+        site.setStatus(Status.INDEXING);
         site.setStatusTime(LocalDateTime.now());
         siteRepository.save(site);
         try {
@@ -99,12 +100,12 @@ public class IndexingPageServiceImpl extends UtilParsing implements IndexingPage
 
         logger.info("--- " + Thread.currentThread().getName() + " reindexing one page " + path + " FINISHED ---" + "\n");
         site.setLastError("NULL");
-        site.setStatus(SiteStatus.INDEXED);
+        site.setStatus(Status.INDEXED);
         siteRepository.save(site);
     }
 
     public void setStatusSiteFailed(Site site, String error) {
-        site.setStatus(SiteStatus.FAILED);
+        site.setStatus(Status.FAILED);
         site.setLastError(error);
         siteRepository.save(site);
     }
@@ -136,10 +137,9 @@ public class IndexingPageServiceImpl extends UtilParsing implements IndexingPage
                 .ignoreContentType(true)
                 .ignoreHttpErrors(true)
                 .followRedirects(false)
-                .userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
-                .referrer("http://www.google.com")
+                .userAgent(connect.getUserAgent())
+                .referrer(connect.getReferrer())
                 .timeout(30000)
                 .get();
     }
-
 }
