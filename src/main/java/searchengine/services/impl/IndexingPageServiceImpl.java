@@ -28,13 +28,9 @@ import java.util.concurrent.ForkJoinPool;
 @RequiredArgsConstructor
 public class IndexingPageServiceImpl extends UtilParsing implements IndexingPageService {
 
-    @Autowired
     private final SiteRepository siteRepository;
-    @Autowired
     private final LemmaRepository lemmaRepository;
-    @Autowired
     private final IndexRepository indexRepository;
-    @Autowired
     private final PageRepository pageRepository;
     private final SitesList sitesList;
     private final Connect connect;

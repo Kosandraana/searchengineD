@@ -30,13 +30,9 @@ import java.util.*;
 public class SearchServiceImpl extends UtilParsing implements SearchService {
 
     private final LemmaFinder lemmaFinder = getLemmaFinder();
-    @Autowired
     private final SiteRepository siteRepository;
-    @Autowired
     private final LemmaRepository lemmaRepository;
-    @Autowired
     private final IndexRepository indexRepository;
-    @Autowired
     private final PageRepository pageRepository;
     private final SitesList sites;
     private final static Logger logger = UtilParsing.getLogger();
@@ -107,7 +103,13 @@ public class SearchServiceImpl extends UtilParsing implements SearchService {
             String title = getTitle(page.getContent());
             String snippet = getSnippet(page ,filteredLemmas);
             double relativeRelevance = getRelativeRelevance(page.getId(), maxRelevance);
-            data.add(new SearchDto().setSite(site.getUrl()).setSiteName(site.getName()).setUri(page.getPath()).setTitle(title).setSnippet(snippet).setRelevance(relativeRelevance));
+            data.add(new SearchDto()
+                    .setSite(site.getUrl())
+                    .setSiteName(site.getName())
+                    .setUri(page.getPath())
+                    .setTitle(title)
+                    .setSnippet(snippet)
+                    .setRelevance(relativeRelevance));
         }
         Collections.sort(data, Collections.reverseOrder());
         return data;
@@ -164,6 +166,7 @@ public class SearchServiceImpl extends UtilParsing implements SearchService {
             logger.info(INFO_PARSING, "--- " + query + " THERE IS NO SUCH LEMMA ---" + "\n");
             return lemmaEntityList;
         }
+
         List<Lemma> filterFrequency = new ArrayList<>();
         for(Lemma lemma : lemmaEntityList){
             if(lemmaRepository.percentageLemmaOnPagesById(lemma.getId()) < frequencyLimit){

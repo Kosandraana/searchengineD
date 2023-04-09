@@ -18,9 +18,7 @@ import java.util.concurrent.*;
 public class IndexingServiceImpl extends UtilParsing implements IndexingService {
 
     private final SitesList sites;
-    @Autowired
     private final SiteRepository siteRepository;
-    @Autowired
     private final PageRepository pageRepository;
     private static final int CORE = Runtime.getRuntime().availableProcessors();
     @Override
